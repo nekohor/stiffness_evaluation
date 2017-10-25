@@ -46,6 +46,25 @@ def progressbar(i):
     sys.stdout.flush()
 
 
+def fst_idx(s, level_line):
+    return s.loc[s > level_line].sort_index().index[0]
+
+
+def lst_idx(s):
+
+    return s.sort_values().index[-1]
+
+
+def cut(df, s, level_line):
+    if s.loc[s > level_line].shape[0] == 0:
+        return df.loc[s > level_line]
+    else:
+        # print(s[s.loc[s > level_line].index[0]],
+        #      s[s.sort_values().index[-1]])
+        return df.loc[(s.index >= fst_idx(s, level_line)) &
+                      (s.index < lst_idx(s))]
+
+
 # --- setup para ---
 # data directory
 root_dir = "../data/零调数据"
@@ -57,6 +76,7 @@ side_list = ["OS", "DS"]
 access_list = ["ENT", "EXT"]
 how_list = ["LC", "PT"]
 level_line = 4000
+total_line = 3000   # 保持率计算
 
 last_num = -1
 last_date = os.listdir(root_dir)[last_num]
@@ -72,10 +92,15 @@ for date_num in date_num_list:
         file_name = [x for x in os.listdir(data_dir) if times_id in x][0]
         df = pd.read_csv("/".join([data_dir, file_name]))
         for std in std_list:
-            df = df.loc[df[frc(std, "OS", "LC")] > level_line]
+            # selected series 1@
+            selected_s = df[frc(std, "OS", "LC")]
+            df = cut(df, selected_s, level_line)
             for side in side_list:
                 for access in access_list:
                     for how in how_list:
+                        # selected series 2@
+                        # selected_s = df[frc(std, side, how)]
+                        # df = cut(df, selected_s, level_line)
                         pos_size = df[pos(std, side, access)].shape[0]
                         frc_size = df[frc(std, side, how)].shape[0]
                         if ((pos_size != 0) and (frc_size != 0) and
@@ -87,7 +112,7 @@ for date_num in date_num_list:
                             )
                         else:
                             summary.loc[std, slp(
-                                side, access, how, times_id)] = 0
+                                side, access, how, times_id)] = np.nan
 
     if not os.path.exists("../data/inter/{}".format(the_date)):
         os.makedirs("../data/inter/{}".format(the_date))
@@ -103,7 +128,7 @@ for date_num in date_num_list:
             the_series = the_series.loc[the_series > 0.001]
             if the_series.shape[0] != 0:
                 plot_data.loc[std, how] = round(
-                    the_series.mean() / 3000 * 100, 2)
+                    the_series.mean() / total_line * 100, 2)
             else:
                 plot_data.loc[std, how] = 0
 
@@ -136,7 +161,7 @@ for date_num in date_num_list:
             the_series = the_series.loc[the_series > 0.001]
             if the_series.shape[0] != 0:
                 box_data.loc[times_id, box_col(std, the_date)] = round(
-                    the_series.mean() / 3000 * 100, 2)
+                    the_series.mean() / total_line * 100, 2)
             else:
                 box_data.loc[times_id, box_col(std, the_date)] = np.nan
                 # or 0
