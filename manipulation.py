@@ -5,7 +5,7 @@ import matplotlib
 import numpy as np
 import os
 import sys
-import seaborn as sns  # 学院派风格的话，这个用不到
+# import seaborn as sns  # 学院派风格的话，这个用不到
 import docx   # 注意是python-docx
 from docx.shared import Inches
 matplotlib.style.use('ggplot')
@@ -93,14 +93,16 @@ for date_num in date_num_list:
         df = pd.read_csv("/".join([data_dir, file_name]))
         for std in std_list:
             # selected series 1@
-            selected_s = df[frc(std, "OS", "LC")]
-            df = cut(df, selected_s, level_line)
+            # selected_s = df[frc(std, "OS", "LC")]
+            # df = cut(df, selected_s, level_line)
+            # df = df.loc[df[frc(std, "OS", "LC")] > level_line]
             for side in side_list:
                 for access in access_list:
                     for how in how_list:
                         # selected series 2@
                         # selected_s = df[frc(std, side, how)]
                         # df = cut(df, selected_s, level_line)
+                        df = df.loc[df[frc(std, side, how)] > level_line]
                         pos_size = df[pos(std, side, access)].shape[0]
                         frc_size = df[frc(std, side, how)].shape[0]
                         if ((pos_size != 0) and (frc_size != 0) and
@@ -125,12 +127,12 @@ for date_num in date_num_list:
         for std in std_list:
             the_col_list = [x for x in summary.columns if how in x]
             the_series = summary.loc[std, the_col_list]
-            the_series = the_series.loc[the_series > 0.001]
+            the_series = the_series.loc[the_series > 1000]
             if the_series.shape[0] != 0:
                 plot_data.loc[std, how] = round(
                     the_series.mean() / total_line * 100, 2)
             else:
-                plot_data.loc[std, how] = 0
+                plot_data.loc[std, how] = np.nan
 
     # --- plt.fig ---
     plt.figure(0)
